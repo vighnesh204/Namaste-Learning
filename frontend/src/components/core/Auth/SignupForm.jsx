@@ -45,6 +45,17 @@ function SignupForm() {
   const handleOnSubmit = (e) => {
     e.preventDefault();
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast.error("Passwords Do Not Match")
       return;

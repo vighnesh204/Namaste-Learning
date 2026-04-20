@@ -84,6 +84,15 @@ exports.signup = async (req, res) => {
             });
         }
 
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ success: false, message: 'Invalid email format' });
+        }
+        
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+        }
+
         // check both pass matches or not
         if (password !== confirmPassword) {
             return res.status(400).json({
@@ -177,6 +186,15 @@ exports.login = async (req, res) => {
                 success: false,
                 message: 'All fields are required'
             });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ success: false, message: 'Invalid email format' });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, message: 'Invalid credentials' });
         }
 
         // check user is registered and saved data in DB

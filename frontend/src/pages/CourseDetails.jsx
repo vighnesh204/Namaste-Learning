@@ -11,6 +11,7 @@ import Footer from "../components/common/Footer"
 import RatingStars from "../components/common/RatingStars"
 import CourseAccordionBar from "../components/core/Course/CourseAccordionBar"
 import CourseDetailsCard from "../components/core/Course/CourseDetailsCard"
+import CoursePaymentModal from "../components/core/Course/CoursePaymentModal"
 import { formatDate } from "../services/formatDate"
 import { fetchCourseDetails } from "../services/operations/courseDetailsAPI"
 import { buyCourse } from "../services/operations/studentFeaturesAPI"
@@ -43,6 +44,7 @@ function CourseDetails() {
   // Declear a state to save the course details
   const [response, setResponse] = useState(null)
   const [confirmationModal, setConfirmationModal] = useState(null)
+  const [paymentModal, setPaymentModal] = useState(false)
 
   useEffect(() => {
     // Calling fetchCourseDetails fucntion to fetch the details
@@ -139,8 +141,7 @@ function CourseDetails() {
   // Buy Course handler
   const handleBuyCourse = () => {
     if (token) {
-      const coursesId = [courseId]
-      buyCourse(token, coursesId, user, navigate, dispatch)
+      setPaymentModal(true)
       return
     }
     setConfirmationModal({
@@ -220,8 +221,17 @@ function CourseDetails() {
             {/* will appear only for small size */}
             <div className="flex w-full flex-col gap-4 border-y border-y-richblack-500 py-4 lg:hidden">
               <p className="space-x-3 pb-4 text-3xl font-semibold text-richblack-5">Rs. {price}</p>
-              <button className="yellowButton" onClick={handleBuyCourse}>Buy Now</button>
-              <button onClick={handleAddToCart} className="blackButton">Add to Cart</button>
+              
+              <button 
+                className="yellowButton" 
+                onClick={user && studentsEnrolled.includes(user?._id) ? () => navigate("/dashboard/enrolled-courses") : handleBuyCourse}
+              >
+                {user && studentsEnrolled.includes(user?._id) ? "Go To Course" : "Buy Now"}
+              </button>
+              
+              {(!user || !studentsEnrolled.includes(user?._id)) && (
+                <button onClick={handleAddToCart} className="blackButton">Add to Cart</button>
+              )}
             </div>
           </div>
 
@@ -325,6 +335,15 @@ function CourseDetails() {
 
       <Footer />
       {confirmationModal && <ConfirmationModal modalData={confirmationModal} />}
+      {paymentModal && (
+        <CoursePaymentModal
+          courseName={courseName}
+          price={price}
+          thumbnail={thumbnail}
+          setPaymentModal={setPaymentModal}
+          handlePayment={() => buyCourse(token, [courseId], user, navigate, dispatch)}
+        />
+      )}
     </>
   )
 }

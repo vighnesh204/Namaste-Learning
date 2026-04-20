@@ -81,6 +81,44 @@ exports.capturePayment = async (req, res) => {
 
 }
 
+// ================ capture Dummy Mock Payment ================
+exports.captureMockPayment = async (req, res) => {
+    const { coursesId } = req.body;
+    const userId = req.user.id;
+
+    if (!coursesId || coursesId.length === 0) {
+        return res.status(400).json({ success: false, message: "Please provide Course Id" });
+    }
+
+    try {
+        for (const course_id of coursesId) {
+            const course = await Course.findById(course_id);
+            if (!course) {
+                return res.status(404).json({ success: false, message: "Could not find the course" });
+            }
+            const uid = new mongoose.Types.ObjectId(userId);
+            if (course.studentsEnrolled.includes(uid)) {
+                return res.status(400).json({ success: false, message: "Student is already Enrolled" });
+            }
+        }
+
+        // Offload database mutations to shared enrollment service
+        await enrollStudents(coursesId, userId, res);
+
+        // Resolve frontend request natively
+        return res.status(200).json({
+            success: true,
+            message: "Mock Payment Processed. Student Successfully Enrolled."
+        });
+
+    } catch (error) {
+        console.error(error);
+        if (!res.headersSent) {
+            return res.status(500).json({ success: false, message: "Server Error during Mock Payment" });
+        }
+    }
+}
+
 
 
 // ================ verify the payment ================
