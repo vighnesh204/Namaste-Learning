@@ -1,4 +1,5 @@
 import { useState } from "react"
+ import { toast } from "react-hot-toast"
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai"
 import { useDispatch } from "react-redux"
 import { Link, useNavigate } from "react-router-dom"
@@ -33,7 +34,7 @@ function LoginForm() {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       toast.error("Invalid credentials.");
       return;
     }

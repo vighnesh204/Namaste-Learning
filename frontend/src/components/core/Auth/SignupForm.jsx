@@ -28,6 +28,7 @@ function SignupForm() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const { firstName, lastName, email, password, confirmPassword } = formData;
 
@@ -44,41 +45,42 @@ function SignupForm() {
   // Handle Form Submission
   const handleOnSubmit = (e) => {
     e.preventDefault();
+    const newErrors = {};
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const nameRegex = /^[A-Za-z]{2,}$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+
+    if (!nameRegex.test(firstName.trim())) {
+      newErrors.firstName = true;
+      toast.error("First name must be letters only (min 2 characters).");
+    }
+    if (!nameRegex.test(lastName.trim())) {
+      newErrors.lastName = true;
+      toast.error("Last name must be letters only (min 2 characters).");
+    }
+    if (!emailRegex.test(email.trim())) {
+      newErrors.email = true;
       toast.error("Please enter a valid email address.");
-      return;
     }
-
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
-      return;
+    if (!passwordRegex.test(password)) {
+      newErrors.password = true;
+      toast.error("Password must be 8+ chars with at least 1 number and 1 special character.");
     }
-
     if (password !== confirmPassword) {
-      toast.error("Passwords Do Not Match")
-      return;
+      newErrors.confirmPassword = true;
+      toast.error("Passwords do not match.");
     }
-    const signupData = {
-      ...formData,
-      accountType,
-    };
 
-    // Setting signup data to state
-    // To be used after otp verification
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+
+    const signupData = { ...formData, accountType };
     dispatch(setSignupData(signupData));
-    // Send OTP to user for verification
     dispatch(sendOtp(formData.email, navigate));
 
-    // Reset form data
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    })
+    setFormData({ firstName: "", lastName: "", email: "", password: "", confirmPassword: "" });
+    setErrors({});
     setAccountType(ACCOUNT_TYPE.STUDENT);
   };
 
@@ -116,10 +118,8 @@ function SignupForm() {
               value={firstName}
               onChange={handleOnChange}
               placeholder="Enter first name"
-              style={{
-                boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-              }}
-              className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5 outline-none"
+              style={{ boxShadow: errors.firstName ? "inset 0px -1px 0px #EF4444" : "inset 0px -1px 0px rgba(255, 255, 255, 0.18)" }}
+              className={`w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5 outline-none border ${errors.firstName ? 'border-red-500' : 'border-transparent'}`}
             />
           </label>
 
@@ -135,10 +135,8 @@ function SignupForm() {
               value={lastName}
               onChange={handleOnChange}
               placeholder="Enter last name"
-              style={{
-                boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-              }}
-              className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5 outline-none"
+              style={{ boxShadow: errors.lastName ? "inset 0px -1px 0px #EF4444" : "inset 0px -1px 0px rgba(255, 255, 255, 0.18)" }}
+              className={`w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5 outline-none border ${errors.lastName ? 'border-red-500' : 'border-transparent'}`}
             />
           </label>
         </div>
@@ -155,10 +153,8 @@ function SignupForm() {
             value={email}
             onChange={handleOnChange}
             placeholder="Enter email address"
-            style={{
-              boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-            }}
-            className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5 outline-none"
+            style={{ boxShadow: errors.email ? "inset 0px -1px 0px #EF4444" : "inset 0px -1px 0px rgba(255, 255, 255, 0.18)" }}
+            className={`w-full rounded-[0.5rem] bg-richblack-800 p-[12px] text-richblack-5 outline-none border ${errors.email ? 'border-red-500' : 'border-transparent'}`}
           />
         </label>
 
@@ -175,11 +171,9 @@ function SignupForm() {
               name="password"
               value={password}
               onChange={handleOnChange}
-              placeholder="Enter Password"
-              style={{
-                boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-              }}
-              className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] pr-10 text-richblack-5 outline-none"
+              placeholder="Min 8 chars, 1 number, 1 symbol"
+              style={{ boxShadow: errors.password ? "inset 0px -1px 0px #EF4444" : "inset 0px -1px 0px rgba(255, 255, 255, 0.18)" }}
+              className={`w-full rounded-[0.5rem] bg-richblack-800 p-[12px] pr-10 text-richblack-5 outline-none border ${errors.password ? 'border-red-500' : 'border-transparent'}`}
             />
             <span
               onClick={() => setShowPassword((prev) => !prev)}
@@ -205,10 +199,8 @@ function SignupForm() {
               value={confirmPassword}
               onChange={handleOnChange}
               placeholder="Confirm Password"
-              style={{
-                boxShadow: "inset 0px -1px 0px rgba(255, 255, 255, 0.18)",
-              }}
-              className="w-full rounded-[0.5rem] bg-richblack-800 p-[12px] pr-10 text-richblack-5 outline-none"
+              style={{ boxShadow: errors.confirmPassword ? "inset 0px -1px 0px #EF4444" : "inset 0px -1px 0px rgba(255, 255, 255, 0.18)" }}
+              className={`w-full rounded-[0.5rem] bg-richblack-800 p-[12px] pr-10 text-richblack-5 outline-none border ${errors.confirmPassword ? 'border-red-500' : 'border-transparent'}`}
             />
             <span
               onClick={() => setShowConfirmPassword((prev) => !prev)}

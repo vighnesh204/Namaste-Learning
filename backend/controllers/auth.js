@@ -76,21 +76,30 @@ exports.signup = async (req, res) => {
         const { firstName, lastName, email, password, confirmPassword,
             accountType, contactNumber, otp } = req.body;
 
-        // validation
-        if (!firstName || !lastName || !email || !password || !confirmPassword || !accountType || !otp) {
-            return res.status(401).json({
-                success: false,
-                message: 'All fields are required..!'
-            });
+        // validation — no empty/whitespace-only fields
+        if (!firstName?.trim() || !lastName?.trim() || !email?.trim() || !password || !confirmPassword || !accountType || !otp) {
+            return res.status(400).json({ success: false, message: 'All fields are required.' });
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ success: false, message: 'Invalid email format' });
+        // Name validation: alphabets only, min 2 chars
+        const nameRegex = /^[A-Za-z]{2,}$/;
+        if (!nameRegex.test(firstName.trim())) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid first name (letters only, min 2 characters).' });
         }
-        
-        if (password.length < 6) {
-            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+        if (!nameRegex.test(lastName.trim())) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid last name (letters only, min 2 characters).' });
+        }
+
+        // Email validation
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email.trim())) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+        }
+
+        // Password strength: 8+ chars, 1 number, 1 special char
+        const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+        if (!passwordRegex.test(password)) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 8 characters with a number and symbol.' });
         }
 
         // check both pass matches or not
@@ -181,20 +190,17 @@ exports.login = async (req, res) => {
         const { email, password } = req.body;
 
         // validation
-        if (!email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: 'All fields are required'
-            });
+        if (!email?.trim() || !password) {
+            return res.status(400).json({ success: false, message: 'All fields are required.' });
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ success: false, message: 'Invalid email format' });
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email.trim())) {
+            return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
         }
 
-        if (password.length < 6) {
-            return res.status(400).json({ success: false, message: 'Invalid credentials' });
+        if (password.length < 8) {
+            return res.status(400).json({ success: false, message: 'Invalid credentials.' });
         }
 
         // check user is registered and saved data in DB
