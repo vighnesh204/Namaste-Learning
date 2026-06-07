@@ -20,6 +20,11 @@ export const profileEndpoints = {
 export const adminEndPoints = {
   GET_ALL_STUDENTS_DATA_API: BASE_URL + "/auth/all-students",
   GET_ALL_INSTRUCTORS_DATA_API: BASE_URL + "/auth/all-instructors",
+  ADMIN_DASHBOARD_STATS_API: BASE_URL + "/profile/admin/dashboard-stats",
+  ADMIN_GET_ALL_COURSES_API: BASE_URL + "/profile/admin/all-courses",
+  ADMIN_DELETE_USER_API: BASE_URL + "/profile/admin/delete-user",
+  ADMIN_TOGGLE_USER_STATUS_API: BASE_URL + "/profile/admin/toggle-user-status",
+  ADMIN_DELETE_COURSE_API: BASE_URL + "/profile/admin/delete-course",
 }
 
 

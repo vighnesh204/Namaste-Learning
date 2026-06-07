@@ -19,6 +19,7 @@ import Navbar from "./components/common/Navbar"
 
 import OpenRoute from "./components/core/Auth/OpenRoute"
 import ProtectedRoute from "./components/core/Auth/ProtectedRoute";
+import HomeRouter from "./components/core/Auth/HomeRouter";
 
 import Dashboard from "./pages/Dashboard";
 import MyProfile from "./components/core/Dashboard/MyProfile";
@@ -41,6 +42,8 @@ import { HiArrowNarrowUp } from "react-icons/hi"
 import CreateCategory from "./components/core/Dashboard/CreateCategory";
 import AllStudents from './components/core/Dashboard/AllStudents';
 import AllInstructors from './components/core/Dashboard/AllInstructors';
+import AdminDashboard from './components/core/Dashboard/AdminDashboard';
+import AdminManageCourses from './components/core/Dashboard/AdminManageCourses';
 
 
 function App() {
@@ -82,7 +85,7 @@ function App() {
       </button>
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<HomeRouter />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/about" element={<About />} />
         <Route path="catalog/:catalogName" element={<Catalog />} />
@@ -144,9 +147,11 @@ function App() {
           <Route path="dashboard/Settings" element={<Settings />} />
 
           {/* Route only for Admin */}
-          {/* create category, all students, all instructors */}
+          {/* create category, all students, all instructors, admin dashboard, manage courses */}
           {user?.accountType === ACCOUNT_TYPE.ADMIN && (
             <>
+              <Route path="dashboard/admin" element={<AdminDashboard />} />
+              <Route path="dashboard/admin-courses" element={<AdminManageCourses />} />
               <Route path="dashboard/create-category" element={<CreateCategory />} />
               <Route path="dashboard/all-students" element={<AllStudents />} />
               <Route path="dashboard/all-instructors" element={<AllInstructors />} />
@@ -160,6 +165,7 @@ function App() {
             <>
               <Route path="dashboard/cart" element={<Cart />} />
               <Route path="dashboard/enrolled-courses" element={<EnrolledCourses />} />
+              <Route path="dashboard/purchase-history" element={<EnrolledCourses />} />
             </>
           )}
 

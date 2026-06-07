@@ -140,6 +140,13 @@ function CourseDetails() {
 
   // Buy Course handler
   const handleBuyCourse = () => {
+    // Instructors and Admins cannot purchase courses
+    if (user && (user?.accountType === ACCOUNT_TYPE.INSTRUCTOR || user?.accountType === ACCOUNT_TYPE.ADMIN)) {
+      toast.error(user.accountType === ACCOUNT_TYPE.ADMIN
+        ? "Admins cannot purchase courses."
+        : "Instructors cannot purchase courses.")
+      return
+    }
     if (token) {
       setPaymentModal(true)
       return
@@ -156,8 +163,10 @@ function CourseDetails() {
 
   // Add to cart Course handler
   const handleAddToCart = () => {
-    if (user && user?.accountType === ACCOUNT_TYPE.INSTRUCTOR) {
-      toast.error("You are an Instructor. You can't buy a course.")
+    if (user && (user?.accountType === ACCOUNT_TYPE.INSTRUCTOR || user?.accountType === ACCOUNT_TYPE.ADMIN)) {
+      toast.error(user.accountType === ACCOUNT_TYPE.ADMIN
+        ? "Admins cannot add courses to cart."
+        : "Instructors cannot add courses to cart.")
       return
     }
     if (token) {
@@ -222,15 +231,34 @@ function CourseDetails() {
             <div className="flex w-full flex-col gap-4 border-y border-y-richblack-500 py-4 lg:hidden">
               <p className="space-x-3 pb-4 text-3xl font-semibold text-richblack-5">Rs. {price}</p>
               
-              <button 
-                className="yellowButton" 
-                onClick={user && studentsEnrolled.includes(user?._id) ? () => navigate("/dashboard/enrolled-courses") : handleBuyCourse}
-              >
-                {user && studentsEnrolled.includes(user?._id) ? "Go To Course" : "Buy Now"}
-              </button>
-              
-              {(!user || !studentsEnrolled.includes(user?._id)) && (
-                <button onClick={handleAddToCart} className="blackButton">Add to Cart</button>
+              {/* Students only: show Buy / Go to course */}
+              {(!user || user?.accountType === ACCOUNT_TYPE.STUDENT) && (
+                <>
+                  <button 
+                    className="yellowButton" 
+                    onClick={user && studentsEnrolled.includes(user?._id) ? () => navigate("/dashboard/enrolled-courses") : handleBuyCourse}
+                  >
+                    {user && studentsEnrolled.includes(user?._id) ? "Go To Course" : "Buy Now"}
+                  </button>
+                  
+                  {(!user || !studentsEnrolled.includes(user?._id)) && (
+                    <button onClick={handleAddToCart} className="blackButton">Add to Cart</button>
+                  )}
+                </>
+              )}
+
+              {/* Instructor view */}
+              {user?.accountType === ACCOUNT_TYPE.INSTRUCTOR && (
+                <p className="text-center text-sm text-richblack-300 bg-richblack-700 rounded-xl py-3 px-4">
+                  Instructors cannot purchase courses.
+                </p>
+              )}
+
+              {/* Admin view */}
+              {user?.accountType === ACCOUNT_TYPE.ADMIN && (
+                <p className="text-center text-sm text-richblack-300 bg-richblack-700 rounded-xl py-3 px-4">
+                  Admins cannot purchase courses.
+                </p>
               )}
             </div>
           </div>

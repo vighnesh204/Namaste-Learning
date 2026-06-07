@@ -1,7 +1,7 @@
 const Profile = require('../models/profile');
 const User = require('../models/user');
-const CourseProgress = require('../models/courseProgress')
-const Course = require('../models/course')
+const CourseProgress = require('../models/courseProgress');
+const Course = require('../models/course');
 
 const { uploadImageToCloudinary, deleteResourceFromCloudinary } = require('../utils/imageUploader');
 const { convertSecondsToDuration } = require('../utils/secToDuration')
@@ -304,6 +304,203 @@ exports.instructorDashboard = async (req, res) => {
 }
 
 
+
+
+// ================ Admin: Dashboard Stats ================
+exports.adminDashboardStats = async (req, res) => {
+    try {
+        const studentsCount = await User.countDocuments({ accountType: 'Student' });
+        const instructorsCount = await User.countDocuments({ accountType: 'Instructor' });
+        const totalUsers = await User.countDocuments({});
+
+        const allCourses = await Course.find({})
+            .select('courseName price studentsEnrolled status thumbnail instructor createdAt')
+            .populate('instructor', 'firstName lastName email');
+
+        const totalCourses = allCourses.length;
+        const publishedCourses = allCourses.filter(c => c.status === 'Published').length;
+        const draftCourses = allCourses.filter(c => c.status === 'Draft').length;
+
+        // Total revenue: sum of (price * studentsEnrolled) for each course
+        const totalRevenue = allCourses.reduce((acc, course) => {
+            return acc + (course.price * (course.studentsEnrolled?.length || 0));
+        }, 0);
+
+        // Recent 5 users
+        const recentUsers = await User.find({})
+            .select('firstName lastName email accountType image createdAt active')
+            .sort({ createdAt: -1 })
+            .limit(5);
+
+        // Top courses by enrollment
+        const topCourses = allCourses
+            .sort((a, b) => (b.studentsEnrolled?.length || 0) - (a.studentsEnrolled?.length || 0))
+            .slice(0, 5)
+            .map(c => ({
+                _id: c._id,
+                courseName: c.courseName,
+                price: c.price,
+                studentsEnrolled: c.studentsEnrolled?.length || 0,
+                instructor: c.instructor,
+                thumbnail: c.thumbnail,
+                status: c.status,
+            }));
+
+        res.status(200).json({
+            success: true,
+            data: {
+                studentsCount,
+                instructorsCount,
+                totalUsers,
+                totalCourses,
+                publishedCourses,
+                draftCourses,
+                totalRevenue,
+                recentUsers,
+                topCourses,
+            },
+            message: 'Admin dashboard stats fetched successfully',
+        });
+    } catch (error) {
+        console.error('adminDashboardStats error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+// ================ Admin: Get All Courses ================
+exports.getAllCoursesAdmin = async (req, res) => {
+    try {
+        const courses = await Course.find({})
+            .populate('instructor', 'firstName lastName email image')
+            .populate('category', 'name')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: courses,
+            count: courses.length,
+            message: 'All courses fetched for admin successfully',
+        });
+    } catch (error) {
+        console.error('getAllCoursesAdmin error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+// ================ Admin: Delete Any User ================
+exports.deleteUserByAdmin = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'userId is required' });
+        }
+
+        const userDetails = await User.findById(userId);
+        if (!userDetails) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Prevent admin from deleting themselves
+        if (userId === req.user.id) {
+            return res.status(403).json({ success: false, message: 'Admin cannot delete their own account via this endpoint' });
+        }
+
+        // Remove student from enrolled courses
+        for (const courseId of userDetails.courses) {
+            await Course.findByIdAndUpdate(courseId, { $pull: { studentsEnrolled: userId } });
+        }
+
+        // Delete profile
+        await Profile.findByIdAndDelete(userDetails.additionalDetails);
+
+        // Delete user
+        await User.findByIdAndDelete(userId);
+
+        res.status(200).json({ success: true, message: 'User deleted successfully by admin' });
+    } catch (error) {
+        console.error('deleteUserByAdmin error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+// ================ Admin: Toggle User Active/Ban Status ================
+exports.toggleUserStatus = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'userId is required' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        user.active = !user.active;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            active: user.active,
+            message: `User has been ${user.active ? 'activated' : 'banned'} successfully`,
+        });
+    } catch (error) {
+        console.error('toggleUserStatus error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+
+// ================ Admin: Delete Any Course ================
+exports.deleteCourseByAdmin = async (req, res) => {
+    try {
+        const { courseId } = req.body;
+        if (!courseId) {
+            return res.status(400).json({ success: false, message: 'courseId is required' });
+        }
+
+        const Section = require('../models/section');
+        const SubSection = require('../models/subSection');
+
+        const course = await Course.findById(courseId);
+        if (!course) {
+            return res.status(404).json({ success: false, message: 'Course not found' });
+        }
+
+        // Unenroll all students
+        for (const studentId of course.studentsEnrolled) {
+            await User.findByIdAndUpdate(studentId, { $pull: { courses: courseId } });
+        }
+
+        // Remove from instructor courses list
+        await User.findByIdAndUpdate(course.instructor, { $pull: { courses: courseId } });
+
+        // Remove from category
+        const Category = require('../models/category');
+        await Category.findByIdAndUpdate(course.category, { $pull: { courses: courseId } });
+
+        // Delete sections and subsections
+        for (const sectionId of course.courseContent) {
+            const section = await Section.findById(sectionId);
+            if (section) {
+                for (const subSectionId of section.subSection) {
+                    await SubSection.findByIdAndDelete(subSectionId);
+                }
+            }
+            await Section.findByIdAndDelete(sectionId);
+        }
+
+        await Course.findByIdAndDelete(courseId);
+
+        res.status(200).json({ success: true, message: 'Course deleted by admin successfully' });
+    } catch (error) {
+        console.error('deleteCourseByAdmin error:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
 
 
 // ================ get All Students ================

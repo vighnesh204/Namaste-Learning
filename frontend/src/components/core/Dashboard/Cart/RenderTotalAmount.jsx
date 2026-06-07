@@ -1,8 +1,10 @@
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
+import toast from "react-hot-toast"
 
 import IconBtn from "../../../common/IconBtn"
 import { buyCourse } from "../../../../services/operations/studentFeaturesAPI"
+import { ACCOUNT_TYPE } from "../../../../utils/constants"
 
 export default function RenderTotalAmount() {
   const { total, cart } = useSelector((state) => state.cart)
@@ -11,8 +13,16 @@ export default function RenderTotalAmount() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
 
-
   const handleBuyCourse = async () => {
+    // Instructors and Admins must not be able to purchase
+    if (user && (user?.accountType === ACCOUNT_TYPE.INSTRUCTOR || user?.accountType === ACCOUNT_TYPE.ADMIN)) {
+      toast.error(
+        user.accountType === ACCOUNT_TYPE.ADMIN
+          ? "Admins cannot purchase courses."
+          : "Instructors cannot purchase courses."
+      )
+      return
+    }
     const courses = cart.map((course) => course._id)
     await buyCourse(token, courses, user, navigate, dispatch)
   }

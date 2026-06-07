@@ -14,8 +14,7 @@ const contactDetails = [
     icon: "BiWorld",
     heading: "Visit us",
     description: "Come and say hello at our office HQ.",
-    details:
-      "Akshya Nagar 1st Block 1st Cross, Rammurthy nagar, Bangalore-560016",
+    details: "Vadhu Budruk Shirur Pune 412216.",
   },
   {
     icon: "IoCall",
