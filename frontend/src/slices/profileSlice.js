@@ -1,7 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit"
 
+// Safely parse stored user — avoids crash if value is malformed
+function getStoredUser() {
+  const raw = localStorage.getItem('user');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    localStorage.removeItem('user');
+    return null;
+  }
+}
+
 const initialState = {
-    user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')) : null,
+    user: getStoredUser(),
     loading: false,
 };
 
